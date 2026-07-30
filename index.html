@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>TECHFEST 2026 — Signal</title>
+<meta name="description" content="TECHFEST 2026 — three days, one frequency. Hackathons, robotics, AI, gaming and design, all tuned to a single signal." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+
+<style>
+/* ===================================================================
+   TECHFEST — SIGNAL  |  design tokens
+   =================================================================== */
+:root{
+  --void:#06070d;
+  --void-2:#0b0d1c;
+  --violet:#6c3fff;
+  --violet-soft:#9c7bff;
+  --cyan:#35e7c7;
+  --magenta:#ff3fa4;
+  --amber:#ffb84d;
+  --ink:#eeecff;
+  --ink-dim:rgba(238,236,255,.64);
+  --ink-faint:rgba(238,236,255,.38);
+  --glass:rgba(255,255,255,.055);
+  --glass-strong:rgba(255,255,255,.09);
+  --glass-border:rgba(255,255,255,.14);
+  --font-display:'Space Grotesk', sans-serif;
+  --font-body:'Inter', sans-serif;
+  --font-mono:'JetBrains Mono', monospace;
+  --container:1220px;
+  --radius:20px;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-behavior:auto; }
+body{
+  margin:0;
+  background:var(--void);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.55;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+body.is-loading{ overflow:hidden; height:100vh; }
+body.modal-open{ overflow:hidden; }
+
+h1,h2,h3,h4{
+  font-family:var(--font-display);
+  margin:0;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+}
+p{ margin:0; }
+a{ color:inherit; text-decoration:none; }
+button{ font-family:inherit; cursor:pointer; }
+ul{ list-style:none; margin:0; padding:0; }
+img{ max-width:100%; display:block; }
+
+::selection{ background:var(--violet); color:#fff; }
+
+.mono{ font-family:var(--font-mono); }
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:.6em;
+  font-size:.72rem;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--cyan);
+}
+.eyebrow::before{
+  content:'';
+  width:7px;height:7px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 10px var(--cyan);
+}
+
+.container{
+  max-width:var(--container);
+  margin:0 auto;
+  padding:0 clamp(20px,5vw,48px);
+  position:relative;
+  z-index:1;
+}
+
+/* focus visibility (kept regardless of custom cursor) */
+a:focus-visible, button:focus-visible{
+  outline:2px solid var(--cyan);
+  outline-offset:4px;
+  border-radius:4px;
+}
+
+/* -------------------------------------------------------------
+   scrollbar
+------------------------------------------------------------- */
+::-webkit-scrollbar{ width:9px; }
+::-webkit-scrollbar-track{ background:var(--void); }
+::-webkit-scrollbar-thumb{
+  background:linear-gradient(var(--violet), var(--cyan));
+  border-radius:10px;
+}
+
+/* -------------------------------------------------------------
+   buttons
+------------------------------------------------------------- */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5em;
+  padding:15px 30px;
+  border-radius:100px;
+  font-family:var(--font-mono);
+  font-size:.82rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  border:1px solid transparent;
+  transition:transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s ease, background .35s ease, border-color .35s ease;
+}
+.btn:hover{ transform:translateY(-3px); }
+.btn--primary{
+  background:linear-gradient(120deg, var(--violet), var(--magenta));
+  color:#fff;
+  box-shadow:0 12px 30px -10px rgba(108,63,255,.65);
+}
+.btn--primary:hover{ box-shadow:0 16px 38px -8px rgba(255,63,164,.55); }
+.btn--ghost{
+  background:var(--glass);
+  border-color:var(--glass-border);
+  color:var(--ink);
+  backdrop-filter:blur(12px);
+}
+.btn--ghost:hover{ background:var(--glass-strong); border-color:rgba(255,255,255,.28); }
+
+/* -------------------------------------------------------------
+   glass panel
+------------------------------------------------------------- */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+}
+
+/* -------------------------------------------------------------
+   aurora blob backdrop (used inside sections)
+------------------------------------------------------------- */
+.aurora-blob{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(90px);
+  opacity:.5;
+  mix-blend-mode:screen;
+  pointer-events:none;
+  z-index:0;
+}
+@keyframes drift-a{
+  0%,100%{ transform:translate(0,0) scale(1); }
+  50%{ transform:translate(4%,6%) scale(1.12); }
+}
+@keyframes drift-b{
+  0%,100%{ transform:translate(0,0) scale(1); }
+  50%{ transform:translate(-6%,-4%) scale(1.08); }
+}
+
+/* ===================================================================
+   CURSOR
+   =================================================================== */
+body:not(.no-cursor){ cursor:none; }
+body:not(.no-cursor) a, body:not(.no-cursor) button{ cursor:none; }
+
+.cursor-dot,.cursor-ring{
+  position:fixed;
+  top:0;left:0;
+  pointer-events:none;
+  z-index:9999;
+  will-change:transform;
+}
+.cursor-dot{
+  width:6px;height:6px;
+  margin:-3px 0 0 -3px;
+  background:var(--cyan);
+  border-radius:50%;
+}
+.cursor-ring{
+  width:38px;height:38px;
+  margin:-19px 0 0 -19px;
+  border:1px solid rgba(238,236,255,.5);
+  border-radius:50%;
+  transition:width .3s ease, height .3s ease, margin .3s ease, border-color .3s ease, background .3s ease;
+  display:flex;align-items:center;justify-content:center;
+}
+.cursor-ring::after{
+  content:attr(data-label);
+  font-family:var(--font-mono);
+  font-size:.58rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--ink);
+  opacity:0;
+  transition:opacity .25s ease;
+  white-space:nowrap;
+}
+body.cursor-active .cursor-ring{
+  width:74px;height:74px;
+  margin:-37px 0 0 -37px;
+  background:rgba(108,63,255,.16);
+  border-color:var(--violet-soft);
+}
+body.cursor-active .cursor-ring::after{ opacity:1; }
+body.no-cursor .cursor-dot, body.no-cursor .cursor-ring{ display:none; }
+
+/* ===================================================================
+   PRELOADER
+   =================================================================== */
+.preloader{
+  position:fixed; inset:0; z-index:10000;
+  background:var(--void);
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:22px;
+}
+.preloader__mark{
+  width:64px;height:64px;
+  border-radius:50%;
+  border:2px solid rgba(238,236,255,.15);
+  border-top-color:var(--cyan);
+  border-right-color:var(--magenta);
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.preloader__pct{
+  font-family:var(--font-mono);
+  font-size:.85rem;
+  letter-spacing:.2em;
+  color:var(--ink-dim);
+}
+.preloader__label{
+  font-family:var(--font-mono);
+  font-size:.68rem;
+  letter-spacing:.24em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+}
+
+/* ===================================================================
+   BACKGROUND CANVAS
+   =================================================================== */
+#bg-canvas{
+  position:fixed; inset:0;
+  z-index:0;
+  display:block;
+}
+.hero__hit{
+  position:fixed;
+  z-index:2;
+  border-radius:50%;
+  background:transparent;
+}
+
+/* ===================================================================
+   NAV
+   =================================================================== */
+.nav{
+  position:fixed; top:0; left:0; right:0;
+  z-index:500;
+  padding:22px clamp(20px,5vw,48px);
+  display:flex; align-items:center; justify-content:space-between;
+  transition:padding .4s ease, background .4s ease, border-color .4s ease;
+  border-bottom:1px solid transparent;
+}
+.nav--scrolled{
+  padding:14px clamp(20px,5vw,48px);
+  background:rgba(6,7,13,.62);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--glass-border);
+}
+.nav__logo{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:1.05rem;
+  letter-spacing:.02em;
+  display:flex; align-items:center; gap:10px;
+}
+.nav__logo-dot{
+  width:9px;height:9px;border-radius:50%;
+  background:linear-gradient(135deg, var(--cyan), var(--magenta));
+  box-shadow:0 0 12px var(--cyan);
+}
+.nav__menu{
+  display:flex; align-items:center; gap:34px;
+}
+.nav__menu a{
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  position:relative;
+  padding:4px 0;
+  transition:color .3s ease;
+}
+.nav__menu a::after{
+  content:'';
+  position:absolute; left:0; bottom:-2px;
+  width:0; height:1px;
+  background:linear-gradient(90deg,var(--cyan),var(--magenta));
+  transition:width .3s ease;
+}
+.nav__menu a:hover, .nav__menu a.is-active{ color:var(--ink); }
+.nav__menu a:hover::after, .nav__menu a.is-active::after{ width:100%; }
+
+.nav__toggle{
+  display:none;
+  width:40px;height:40px;
+  border-radius:50%;
+  border:1px solid var(--glass-border);
+  background:var(--glass);
+  align-items:center; justify-content:center;
+  flex-direction:column; gap:4px;
+}
+.nav__toggle span{
+  width:16px;height:1.5px;background:var(--ink);
+  transition:transform .3s ease, opacity .3s ease;
+}
+body.nav-open .nav__toggle span:nth-child(1){ transform:translateY(5.5px) rotate(45deg); }
+body.nav-open .nav__toggle span:nth-child(2){ opacity:0; }
+body.nav-open .nav__toggle span:nth-child(3){ transform:translateY(-5.5px) rotate(-45deg); }
+
+/* ===================================================================
+   SIGNAL HUD (scroll progress ring, bottom-right)
+   =================================================================== */
+.signal-hud{
+  position:fixed;
+  right:clamp(16px,3vw,34px);
+  bottom:clamp(16px,3vw,34px);
+  z-index:400;
+  display:flex; align-items:center; gap:12px;
+  padding:10px 16px 10px 10px;
+  border-radius:100px;
+}
+.signal-hud__ring-wrap{ width:40px;height:40px; flex:none; }
+.signal-hud__ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
+.signal-hud__ring-bg{ fill:none; stroke:rgba(255,255,255,.12); stroke-width:3; }
+.signal-hud__ring-fg{ fill:none; stroke:url(#hudGradient); stroke-width:3; stroke-linecap:round; }
+.signal-hud__text{ display:flex; flex-direction:column; line-height:1.25; }
+.signal-hud__index{ font-family:var(--font-mono); font-size:.62rem; color:var(--cyan); letter-spacing:.1em; }
+.signal-hud__label{ font-family:var(--font-mono); font-size:.66rem; letter-spacing:.12em; color:var(--ink); text-transform:uppercase; }
+
+/* ===================================================================
+   BACK TO TOP
+   =================================================================== */
+.back-to-top{
+  position:fixed;
+  left:clamp(16px,3vw,34px);
+  bottom:clamp(16px,3vw,34px);
+  z-index:400;
+  width:44px;height:44px;
+  border-radius:50%;
+  border:1px solid var(--glass-border);
+  background:var(--glass);
+  color:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transform:translateY(12px);
+  pointer-events:none;
+  transition:opacity .4s ease, transform .4s ease, background .3s ease;
+}
+.back-to-top.is-visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
+.back-to-top:hover{ background:var(--glass-strong); }
+
+/* ===================================================================
+   HERO
+   =================================================================== */
+.hero{
+  position:relative;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:120px 24px 60px;
+  z-index:1;
+}
+.hero__inner{ max-width:840px; display:flex; flex-direction:column; align-items:center; gap:22px; }
+.hero__title{
+  font-size:clamp(3.6rem, 12vw, 8.5rem);
+  font-weight:700;
+  line-height:.94;
+  background:linear-gradient(120deg, #fff 10%, var(--violet-soft) 45%, var(--cyan) 70%, var(--magenta) 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  letter-spacing:-.02em;
+}
+.hero__tagline{
+  font-size:clamp(1rem,2.4vw,1.35rem);
+  color:var(--ink-dim);
+  max-width:540px;
+}
+.hero__cta{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+.hero__coords{
+  margin-top:26px;
+  font-size:.7rem;
+  letter-spacing:.16em;
+  color:var(--ink-faint);
+  text-transform:uppercase;
+}
+.hero__scrollcue{
+  position:absolute;
+  bottom:36px; left:50%;
+  transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  font-family:var(--font-mono);
+  font-size:.62rem;
+  letter-spacing:.24em;
+  color:var(--ink-faint);
+}
+.hero__scrollcue span{
+  width:1px; height:34px;
+  background:linear-gradient(var(--cyan), transparent);
+  animation:scrollcue 1.8s ease-in-out infinite;
+}
+@keyframes scrollcue{
+  0%{ transform:scaleY(0); transform-origin:top; opacity:1; }
+  50%{ transform:scaleY(1); transform-origin:top; }
+  51%{ transform-origin:bottom; }
+  100%{ transform:scaleY(0); transform-origin:bottom; opacity:.4; }
+}
+
+/* ===================================================================
+   SECTION GENERIC
+   =================================================================== */
+.section{
+  position:relative;
+  padding:150px 0;
+  z-index:1;
+  overflow:hidden;
+}
+.section-head{
+  max-width:640px;
+  margin-bottom:64px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+.section-head h2{
+  font-size:clamp(2.1rem,5vw,3.4rem);
+  font-weight:600;
+  line-height:1.05;
+}
+.section-head p{ color:var(--ink-dim); font-size:1.02rem; max-width:520px; }
+
+/* ===================================================================
+   ABOUT / ORIGIN
+   =================================================================== */
+.origin{ padding-top:120px; }
+.origin__grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:60px;
+  align-items:start;
+}
+.origin__copy p{ color:var(--ink-dim); font-size:1.05rem; margin-bottom:18px; }
+.origin__copy p:last-child{ margin-bottom:0; }
+.origin__stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  background:var(--glass-border);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.stat{
+  background:rgba(11,13,28,.7);
+  padding:30px 26px;
+  display:flex; flex-direction:column; gap:8px;
+}
+.stat__value{
+  font-family:var(--font-display);
+  font-size:2.2rem;
+  font-weight:700;
+  background:linear-gradient(120deg,var(--cyan),var(--violet-soft));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.stat__label{
+  font-family:var(--font-mono);
+  font-size:.68rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+}
+
+/* ===================================================================
+   EVENTS / FREQUENCIES
+   =================================================================== */
+.freq-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:22px;
+}
+.freq-card{
+  position:relative;
+  padding:34px 28px;
+  min-height:260px;
+  display:flex; flex-direction:column; justify-content:space-between;
+  gap:24px;
+  transform-style:preserve-3d;
+  will-change:transform;
+  transition:border-color .35s ease, background .35s ease;
+  overflow:hidden;
+}
+.freq-card::before{
+  content:'';
+  position:absolute; inset:0;
+  background:var(--card-glow, radial-gradient(circle at 30% 20%, rgba(108,63,255,.28), transparent 60%));
+  opacity:0;
+  transition:opacity .4s ease;
+  pointer-events:none;
+}
+.freq-card:hover::before{ opacity:1; }
+.freq-card:hover{ border-color:rgba(255,255,255,.28); }
+.freq-card__num{
+  font-family:var(--font-mono);
+  font-size:.7rem;
+  letter-spacing:.14em;
+  color:var(--ink-faint);
+}
+.freq-card__icon{
+  width:46px;height:46px;
+  border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.35rem;
+  background:linear-gradient(135deg, rgba(255,255,255,.1), rgba(255,255,255,.02));
+  border:1px solid var(--glass-border);
+}
+.freq-card__title{ font-size:1.32rem; font-weight:600; margin-top:4px; }
+.freq-card__tag{ color:var(--ink-dim); font-size:.92rem; }
+.freq-card__foot{
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-mono); font-size:.68rem; letter-spacing:.08em;
+  color:var(--ink-faint); text-transform:uppercase;
+}
+.freq-card__foot .arrow{ transition:transform .3s ease; }
+.freq-card:hover .freq-card__foot .arrow{ transform:translateX(5px); }
+
+/* ===================================================================
+   MODAL
+   =================================================================== */
+.modal{
+  position:fixed; inset:0; z-index:2000;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  background:rgba(4,5,10,.72);
+  backdrop-filter:blur(6px);
+  opacity:0; pointer-events:none;
+  transition:opacity .35s ease;
+}
+body.modal-open .modal{ opacity:1; pointer-events:auto; }
+.modal__panel{
+  position:relative;
+  max-width:560px; width:100%;
+  padding:44px;
+  background:rgba(14,15,28,.9);
+  border:1px solid var(--glass-border);
+  border-radius:24px;
+  backdrop-filter:blur(24px);
+  transform:translateY(16px) scale(.98);
+  transition:transform .35s cubic-bezier(.16,1,.3,1);
+}
+body.modal-open .modal__panel{ transform:translateY(0) scale(1); }
+.modal__close{
+  position:absolute; top:18px; right:18px;
+  width:36px;height:36px; border-radius:50%;
+  border:1px solid var(--glass-border);
+  background:var(--glass);
+  color:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem;
+}
+.modal__eyebrow{
+  font-family:var(--font-mono); font-size:.66rem; letter-spacing:.14em;
+  color:var(--cyan); text-transform:uppercase;
+}
+.modal__title{ font-size:1.9rem; margin:14px 0 16px; }
+.modal__desc{ color:var(--ink-dim); font-size:.98rem; margin-bottom:26px; }
+.modal__meta{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+  border-top:1px solid var(--glass-border); padding-top:22px;
+}
+.modal__meta div{ display:flex; flex-direction:column; gap:6px; }
+.modal__meta span{ font-family:var(--font-mono); font-size:.62rem; letter-spacing:.1em; color:var(--ink-faint); text-transform:uppercase; }
+.modal__meta strong{ font-size:.98rem; font-weight:600; }
+
+/* ===================================================================
+   TIMELINE / TRAJECTORY
+   =================================================================== */
+.trajectory__day{ margin-bottom:64px; }
+.trajectory__day:last-child{ margin-bottom:0; }
+.trajectory__daylabel{
+  display:flex; align-items:baseline; gap:14px;
+  margin-bottom:28px;
+}
+.trajectory__daylabel h3{ font-size:1.5rem; font-weight:600; }
+.trajectory__daylabel span{
+  font-family:var(--font-mono); font-size:.72rem; color:var(--cyan); letter-spacing:.1em;
+}
+.trajectory__track{
+  position:relative;
+  padding-left:34px;
+  --progress:0;
+}
+.trajectory__track::before{
+  content:'';
+  position:absolute; left:5px; top:6px; bottom:6px; width:1px;
+  background:rgba(255,255,255,.12);
+}
+.trajectory__track::after{
+  content:'';
+  position:absolute; left:5px; top:6px; width:1px;
+  height:calc((100% - 12px) * var(--progress));
+  background:linear-gradient(var(--cyan), var(--magenta));
+  box-shadow:0 0 8px var(--cyan);
+  transition:height .05s linear;
+}
+.trajectory__item{
+  position:relative;
+  padding-bottom:30px;
+}
+.trajectory__item:last-child{ padding-bottom:0; }
+.trajectory__item::before{
+  content:'';
+  position:absolute; left:-34px; top:4px;
+  width:11px;height:11px; border-radius:50%;
+  background:var(--void-2);
+  border:2px solid var(--cyan);
+}
+.trajectory__time{
+  font-family:var(--font-mono); font-size:.74rem; color:var(--ink-faint);
+  letter-spacing:.08em; margin-bottom:4px; display:block;
+}
+.trajectory__title{ font-size:1.05rem; font-weight:600; margin-bottom:4px; }
+.trajectory__desc{ color:var(--ink-dim); font-size:.9rem; }
+
+/* ===================================================================
+   SPEAKERS / BROADCASTERS
+   =================================================================== */
+.broadcaster-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:22px;
+}
+.broadcaster{
+  position:relative;
+  padding:26px 22px 22px;
+  text-align:center;
+  overflow:hidden;
+}
+.broadcaster__avatar{
+  width:72px;height:72px;
+  margin:0 auto 18px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-weight:700; font-size:1.3rem;
+  color:#fff;
+}
+.broadcaster__name{ font-size:1.02rem; font-weight:600; }
+.broadcaster__role{
+  font-family:var(--font-mono); font-size:.68rem; color:var(--ink-faint);
+  margin-top:6px; line-height:1.5;
+}
+.broadcaster__bio{
+  margin-top:14px;
+  font-size:.82rem; color:var(--ink-dim);
+  max-height:0; opacity:0;
+  overflow:hidden;
+  transition:max-height .4s ease, opacity .4s ease, margin .4s ease;
+}
+.broadcaster:hover .broadcaster__bio,
+.broadcaster.is-active .broadcaster__bio{
+  max-height:120px; opacity:1;
+}
+
+/* ===================================================================
+   GALLERY / ARCHIVE
+   =================================================================== */
+.archive-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  grid-auto-rows:120px;
+  gap:14px;
+}
+.archive-item{
+  position:relative;
+  border-radius:16px;
+  overflow:hidden;
+  border:1px solid var(--glass-border);
+  display:flex; align-items:flex-end;
+  padding:16px;
+  background-size:cover;
+  transition:transform .5s cubic-bezier(.16,1,.3,1);
+}
+.archive-item:hover{ transform:scale(1.03); }
+.archive-item--tall{ grid-row:span 2; }
+.archive-item__tag{
+  font-family:var(--font-mono); font-size:.62rem; letter-spacing:.1em;
+  color:rgba(255,255,255,.85); text-transform:uppercase;
+  padding:6px 10px; border-radius:100px;
+  background:rgba(6,7,13,.5);
+  backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.18);
+}
+
+/* ===================================================================
+   REGISTER / TUNE IN
+   =================================================================== */
+.tunein{
+  text-align:center;
+  padding-bottom:100px;
+}
+.tunein__panel{
+  padding:clamp(40px,7vw,80px) clamp(24px,6vw,60px);
+  display:flex; flex-direction:column; align-items:center; gap:30px;
+  position:relative;
+  overflow:hidden;
+}
+.tunein h2{
+  font-size:clamp(2.2rem,6vw,4rem);
+  max-width:720px;
+}
+.tunein p.sub{ color:var(--ink-dim); max-width:480px; font-size:1.02rem; }
+
+.countdown{
+  display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
+}
+.countdown__unit{
+  min-width:84px;
+  padding:16px 10px;
+  border-radius:14px;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--glass-border);
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.countdown__unit strong{
+  font-family:var(--font-mono); font-size:1.9rem; font-weight:500;
+  background:linear-gradient(120deg,var(--cyan),var(--violet-soft));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.countdown__unit span{
+  font-family:var(--font-mono); font-size:.6rem; letter-spacing:.1em;
+  color:var(--ink-faint); text-transform:uppercase;
+}
+
+/* ===================================================================
+   FOOTER
+   =================================================================== */
+.footer{
+  position:relative;
+  padding:60px 0 40px;
+  border-top:1px solid var(--glass-border);
+  z-index:1;
+}
+.footer__top{
+  display:flex; justify-content:space-between; align-items:flex-start;
+  gap:40px; flex-wrap:wrap;
+  padding-bottom:36px;
+}
+.footer__brand{ font-family:var(--font-display); font-weight:700; font-size:1.3rem; }
+.footer__tagline{ color:var(--ink-faint); font-size:.85rem; margin-top:10px; max-width:280px; }
+.footer__links{ display:flex; gap:56px; flex-wrap:wrap; }
+.footer__col h4{
+  font-family:var(--font-mono); font-size:.66rem; letter-spacing:.12em;
+  color:var(--ink-faint); text-transform:uppercase; margin-bottom:14px;
+}
+.footer__col a{
+  display:block; font-size:.88rem; color:var(--ink-dim);
+  margin-bottom:10px; transition:color .3s ease;
+}
+.footer__col a:hover{ color:var(--cyan); }
+.footer__bottom{
+  display:flex; justify-content:space-between; align-items:center;
+  padding-top:26px; border-top:1px solid var(--glass-border);
+  font-family:var(--font-mono); font-size:.7rem; color:var(--ink-faint);
+  flex-wrap:wrap; gap:12px;
+}
+.footer__socials{ display:flex; gap:16px; }
+.footer__socials a{
+  width:34px;height:34px; border-radius:50%;
+  border:1px solid var(--glass-border);
+  display:flex; align-items:center; justify-content:center;
+  transition:background .3s ease, border-color .3s ease;
+}
+.footer__socials a:hover{ background:var(--glass-strong); border-color:rgba(255,255,255,.3); }
+
+/* ===================================================================
+   RESPONSIVE
+   =================================================================== */
+@media (max-width:1080px){
+  .freq-grid{ grid-template-columns:repeat(2,1fr); }
+  .broadcaster-grid{ grid-template-columns:repeat(2,1fr); }
+  .archive-grid{ grid-template-columns:repeat(3,1fr); }
+  .origin__grid{ grid-template-columns:1fr; gap:40px; }
+}
+
+@media (max-width:760px){
+  .nav__menu{
+    position:fixed; top:0; right:0; bottom:0;
+    width:min(76vw,320px);
+    background:rgba(9,10,20,.86);
+    backdrop-filter:blur(20px);
+    border-left:1px solid var(--glass-border);
+    flex-direction:column; align-items:flex-start;
+    justify-content:center;
+    gap:26px;
+    padding:40px 34px;
+    transform:translateX(100%);
+    transition:transform .45s cubic-bezier(.16,1,.3,1);
+  }
+  body.nav-open .nav__menu{ transform:translateX(0); }
+  .nav__toggle{ display:flex; }
+  .nav__menu a{ font-size:.9rem; }
+
+  .section{ padding:100px 0; }
+  .freq-grid{ grid-template-columns:1fr; }
+  .broadcaster-grid{ grid-template-columns:repeat(2,1fr); }
+  .archive-grid{ grid-template-columns:repeat(2,1fr); grid-auto-rows:110px; }
+  .origin__stats{ grid-template-columns:1fr 1fr; }
+  .footer__top{ flex-direction:column; }
+  .footer__links{ gap:32px; }
+  .signal-hud__text{ display:none; }
+  .signal-hud{ padding:8px; }
+}
+
+@media (max-width:460px){
+  .archive-grid{ grid-template-columns:repeat(2,1fr); }
+  .countdown__unit{ min-width:70px; padding:12px 6px; }
+  .countdown__unit strong{ font-size:1.5rem; }
+}
+
+/* ===================================================================
+   REDUCED MOTION
+   =================================================================== */
+@media (prefers-reduced-motion: reduce){
+  .hero__scrollcue span{ animation:none; }
+  .aurora-blob{ animation:none !important; }
+  *{ scroll-behavior:auto !important; }
+}
+
+
+</style>
+</head>
+<body class="is-loading">
+<div class="preloader">
+  <div class="preloader__mark"></div>
+  <div class="preloader__pct">0%</div>
+  <div class="preloader__label">Tuning frequency</div>
+</div>
+
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+
+<canvas id="bg-canvas"></canvas>
+<div class="hero__hit" data-cursor="Tap"></div>
+
+<nav class="nav">
+  <a href="#hero" class="nav__logo">
+    <span class="nav__logo-dot"></span> TECHFEST
+  </a>
+  <ul class="nav__menu">
+    <li><a href="#about">Origin</a></li>
+    <li><a href="#events">Frequencies</a></li>
+    <li><a href="#timeline">Trajectory</a></li>
+    <li><a href="#speakers">Broadcasters</a></li>
+    <li><a href="#gallery">Archive</a></li>
+    <li><a href="#register" class="mono">Tune In →</a></li>
+  </ul>
+  <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="signal-hud glass">
+  <div class="signal-hud__ring-wrap">
+    <svg viewBox="0 0 40 40">
+      <defs>
+        <linearGradient id="hudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#35e7c7"/>
+          <stop offset="100%" stop-color="#ff3fa4"/>
+        </linearGradient>
+      </defs>
+      <circle class="signal-hud__ring-bg" cx="20" cy="20" r="17"/>
+      <circle class="signal-hud__ring-fg" cx="20" cy="20" r="17"/>
+    </svg>
+  </div>
+  <div class="signal-hud__text">
+    <span class="signal-hud__index">WP // 00</span>
+    <span class="signal-hud__label">Transmission</span>
+  </div>
+</div>
+
+<button class="back-to-top" aria-label="Back to top" data-cursor="Top">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<main>
+
+  <!-- ============================== HERO ============================== -->
+  <section id="hero" class="hero" data-waypoint="Transmission" data-waypoint-index="WP // 00">
+    <div class="hero__inner">
+      <p class="eyebrow mono">Incoming transmission // Techfest 2026</p>
+      <h1 class="hero__title">TECHFEST</h1>
+      <p class="hero__tagline">Three days. One frequency. Every builder tuned in.</p>
+      <div class="hero__cta">
+        <a href="#register" class="btn btn--primary" data-cursor="Register">Tune In</a>
+        <a href="#timeline" class="btn btn--ghost" data-cursor="View">Read the Signal</a>
+      </div>
+      <p class="hero__coords mono">16–18 OCT 2026 · MUMBAI, IN · 19.0760° N</p>
+    </div>
+    <div class="hero__scrollcue"><span></span>SCROLL</div>
+  </section>
+
+  <!-- ============================== ABOUT / ORIGIN ============================== -->
+  <section id="about" class="section origin" data-waypoint="Origin" data-waypoint-index="WP // 01">
+    <div class="aurora-blob" style="width:420px;height:420px;top:-100px;left:-140px;background:var(--violet);animation:drift-a 18s ease-in-out infinite;"></div>
+    <div class="container">
+      <div class="origin__grid reveal-group">
+        <div class="origin__copy reveal-item">
+          <p class="eyebrow mono">Waypoint 01 — Origin</p>
+          <h2>A signal, before it's an event.</h2>
+          <p>Techfest started as a late-night build session between three engineering students who wanted an excuse to stay up arguing about architecture. It's now three days of hackathons, robotics, talks, and games — but the argument is still the point.</p>
+          <p>Every track is judged on whether it actually works, not how well it pitches. Bring something half-finished. Leave with it running.</p>
+        </div>
+        <div class="origin__stats reveal-item">
+          <div class="stat">
+            <span class="stat__value" data-count="5200" data-suffix="+">0</span>
+            <span class="stat__label">Attendees</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value" data-count="42">0</span>
+            <span class="stat__label">Events</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value" data-count="12" data-suffix="L+">0</span>
+            <span class="stat__label">Prize pool (₹)</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value" data-count="48">0</span>
+            <span class="stat__label">Hours, non-stop</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== EVENTS / FREQUENCIES ============================== -->
+  <section id="events" class="section" data-waypoint="Frequencies" data-waypoint-index="WP // 02">
+    <div class="aurora-blob" style="width:500px;height:500px;top:10%;right:-180px;background:var(--cyan);animation:drift-b 22s ease-in-out infinite;"></div>
+    <div class="container">
+      <div class="section-head reveal-group">
+        <p class="eyebrow mono reveal-item">Waypoint 02 — Frequencies</p>
+        <h2 class="reveal-item">Six channels. Pick what you're tuned to.</h2>
+        <p class="reveal-item">Every track runs independently — enter one or stack three. Tap a card for the full brief.</p>
+      </div>
+      <div class="freq-grid reveal-group">
+
+        <article class="freq-card glass reveal-item" data-key="hack" tabindex="0" data-cursor="Open" style="--card-glow:radial-gradient(circle at 30% 20%, rgba(108,63,255,.3), transparent 60%);">
+          <div>
+            <span class="freq-card__num mono">FREQ 01</span>
+            <div class="freq-card__icon" style="color:var(--violet-soft);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 8 4 12l5 4M15 8l5 4-5 4"/></svg>
+            </div>
+            <h3 class="freq-card__title">Hack the Grid</h3>
+            <p class="freq-card__tag">36-hour build sprint · Hackathon</p>
+          </div>
+          <div class="freq-card__foot"><span>₹3,00,000 prize</span><span class="arrow">→</span></div>
+        </article>
+
+        <article class="freq-card glass reveal-item" data-key="robotics" tabindex="0" data-cursor="Open" style="--card-glow:radial-gradient(circle at 30% 20%, rgba(53,231,199,.28), transparent 60%);">
+          <div>
+            <span class="freq-card__num mono">FREQ 02</span>
+            <div class="freq-card__icon" style="color:var(--cyan);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="9" width="12" height="10" rx="2"/><path d="M12 9V5M9 5h6"/><circle cx="9.5" cy="14" r="1"/><circle cx="14.5" cy="14" r="1"/></svg>
+            </div>
+            <h3 class="freq-card__title">Circuit &amp; Steel</h3>
+            <p class="freq-card__tag">Autonomous combat · Robotics arena</p>
+          </div>
+          <div class="freq-card__foot"><span>₹2,00,000 prize</span><span class="arrow">→</span></div>
+        </article>
+
+        <article class="freq-card glass reveal-item" data-key="ai" tabindex="0" data-cursor="Open" style="--card-glow:radial-gradient(circle at 30% 20%, rgba(255,63,164,.26), transparent 60%);">
+          <div>
+            <span class="freq-card__num mono">FREQ 03</span>
+            <div class="freq-card__icon" style="color:var(--magenta);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M7.6 8.4 10.6 15.4M16.4 8.4 13.4 15.4M8 7h8"/></svg>
+            </div>
+            <h3 class="freq-card__title">Neural Frontier</h3>
+            <p class="freq-card__tag">Talks + rapid build · AI &amp; ML summit</p>
+          </div>
+          <div class="freq-card__foot"><span>₹1,50,000 prize</span><span class="arrow">→</span></div>
+        </article>
+
+        <article class="freq-card glass reveal-item" data-key="gaming" tabindex="0" data-cursor="Open" style="--card-glow:radial-gradient(circle at 30% 20%, rgba(255,184,77,.26), transparent 60%);">
+          <div>
+            <span class="freq-card__num mono">FREQ 04</span>
+            <div class="freq-card__icon" style="color:var(--amber);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="9" width="18" height="9" rx="4"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="16" cy="11.5" r="1"/><circle cx="18.2" cy="13.7" r="1"/></svg>
+            </div>
+            <h3 class="freq-card__title">Pixel Uprising</h3>
+            <p class="freq-card__tag">LAN tournaments · Gaming arena</p>
+          </div>
+          <div class="freq-card__foot"><span>₹1,00,000 prize</span><span class="arrow">→</span></div>
+        </article>
+
+        <article class="freq-card glass reveal-item" data-key="design" tabindex="0" data-cursor="Open" style="--card-glow:radial-gradient(circle at 30% 20%, rgba(108,63,255,.3), transparent 60%);">
+          <div>
+            <span class="freq-card__num mono">FREQ 05</span>
+            <div class="freq-card__icon" style="color:var(--violet-soft);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20l1-4.2L15.8 5 19 8.2 8.2 19 4 20Z"/><path d="M13 7l4 4"/></svg>
+            </div>
+            <h3 class="freq-card__title">Blueprint Sprint</h3>
+            <p class="freq-card__tag">Brief to prototype · Design sprint</p>
+          </div>
+          <div class="freq-card__foot"><span>₹75,000 prize</span><span class="arrow">→</span></div>
+        </article>
+
+        <article class="freq-card glass reveal-item" data-key="workshops" tabindex="0" data-cursor="Open" style="--card-glow:radial-gradient(circle at 30% 20%, rgba(53,231,199,.28), transparent 60%);">
+          <div>
+            <span class="freq-card__num mono">FREQ 06</span>
+            <div class="freq-card__icon" style="color:var(--cyan);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="1.6"/><path d="M12 5.5a6.5 6.5 0 0 1 0 13M12 2a10 10 0 0 1 0 20"/></svg>
+            </div>
+            <h3 class="freq-card__title">Open Signal</h3>
+            <p class="freq-card__tag">Drop-in sessions · Workshops</p>
+          </div>
+          <div class="freq-card__foot"><span>Certificate</span><span class="arrow">→</span></div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== TIMELINE / TRAJECTORY ============================== -->
+  <section id="timeline" class="section" data-waypoint="Trajectory" data-waypoint-index="WP // 03">
+    <div class="container">
+      <div class="section-head reveal-group">
+        <p class="eyebrow mono reveal-item">Waypoint 03 — Trajectory</p>
+        <h2 class="reveal-item">The signal's path over three days.</h2>
+        <p class="reveal-item">A rough course — tracks overlap on purpose, so pick your own route.</p>
+      </div>
+
+      <div class="trajectory__day">
+        <div class="trajectory__daylabel"><h3>Day One</h3><span class="mono">16 OCT</span></div>
+        <div class="trajectory__track">
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">09:00</span>
+            <h4 class="trajectory__title">Opening transmission</h4>
+            <p class="trajectory__desc">Keynote + kickoff for every track, main stage.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">11:00</span>
+            <h4 class="trajectory__title">Hack the Grid begins</h4>
+            <p class="trajectory__desc">Teams lock in problem statements, 36-hour clock starts.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">15:00</span>
+            <h4 class="trajectory__title">Robotics qualifiers</h4>
+            <p class="trajectory__desc">First obstacle-course runs, arena stage.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">19:00</span>
+            <h4 class="trajectory__title">Welcome mixer</h4>
+            <p class="trajectory__desc">Food trucks, lawn stage, low-key.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="trajectory__day">
+        <div class="trajectory__daylabel"><h3>Day Two</h3><span class="mono">17 OCT</span></div>
+        <div class="trajectory__track">
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">09:00</span>
+            <h4 class="trajectory__title">Neural Frontier talks</h4>
+            <p class="trajectory__desc">Research + founder sessions, summit hall.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">13:00</span>
+            <h4 class="trajectory__title">Blueprint Sprint</h4>
+            <p class="trajectory__desc">12-hour design sprint opens.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">17:00</span>
+            <h4 class="trajectory__title">Gaming quarterfinals</h4>
+            <p class="trajectory__desc">Bracket play across all three titles.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">21:00</span>
+            <h4 class="trajectory__title">Night build session</h4>
+            <p class="trajectory__desc">Mentors on the floor till 2am for hackathon teams.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="trajectory__day">
+        <div class="trajectory__daylabel"><h3>Day Three</h3><span class="mono">18 OCT</span></div>
+        <div class="trajectory__track">
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">10:00</span>
+            <h4 class="trajectory__title">Hackathon finals</h4>
+            <p class="trajectory__desc">Demos to judging panel, main stage.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">13:00</span>
+            <h4 class="trajectory__title">Robotics finals</h4>
+            <p class="trajectory__desc">Combat rounds + precision finals.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">16:00</span>
+            <h4 class="trajectory__title">Gaming finals</h4>
+            <p class="trajectory__desc">Grand finals, all titles, main stage.</p>
+          </div>
+          <div class="trajectory__item">
+            <span class="trajectory__time mono">18:00</span>
+            <h4 class="trajectory__title">Awards + closing transmission</h4>
+            <p class="trajectory__desc">Every track, one stage, signal off-air till next year.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================== SPEAKERS / BROADCASTERS ============================== -->
+  <section id="speakers" class="section" data-waypoint="Broadcasters" data-waypoint-index="WP // 04">
+    <div class="aurora-blob" style="width:460px;height:460px;bottom:-160px;left:-120px;background:var(--magenta);animation:drift-a 20s ease-in-out infinite;"></div>
+    <div class="container">
+      <div class="section-head reveal-group">
+        <p class="eyebrow mono reveal-item">Waypoint 04 — Broadcasters</p>
+        <h2 class="reveal-item">Voices on the frequency.</h2>
+        <p class="reveal-item">Hover a card — or tap, on smaller screens — for the full bio.</p>
+      </div>
+      <div class="broadcaster-grid reveal-group">
+
+        <div class="broadcaster glass reveal-item" data-cursor="Info">
+          <div class="broadcaster__avatar" style="background:linear-gradient(135deg,var(--violet),var(--magenta));">AC</div>
+          <h3 class="broadcaster__name">Dr. Aria Chen</h3>
+          <p class="broadcaster__role mono">Systems Architect<br>Quantum Labs</p>
+          <p class="broadcaster__bio">Spent a decade building distributed systems that aren't allowed to go down. Talking failure modes nobody wants to admit to.</p>
+        </div>
+
+        <div class="broadcaster glass reveal-item" data-cursor="Info">
+          <div class="broadcaster__avatar" style="background:linear-gradient(135deg,var(--cyan),var(--violet));">RM</div>
+          <h3 class="broadcaster__name">Rohan Mehta</h3>
+          <p class="broadcaster__role mono">Founder<br>DeepOrbit Robotics</p>
+          <p class="broadcaster__bio">Builds bots for places humans shouldn't have to go. Judging the robotics arena this year.</p>
+        </div>
+
+        <div class="broadcaster glass reveal-item" data-cursor="Info">
+          <div class="broadcaster__avatar" style="background:linear-gradient(135deg,var(--magenta),var(--amber));">NO</div>
+          <h3 class="broadcaster__name">Naledi Okafor</h3>
+          <p class="broadcaster__role mono">Head of AI Research<br>Vantage</p>
+          <p class="broadcaster__bio">Works on models that explain themselves. Running the Neural Frontier build challenge.</p>
+        </div>
+
+        <div class="broadcaster glass reveal-item" data-cursor="Info">
+          <div class="broadcaster__avatar" style="background:linear-gradient(135deg,var(--amber),var(--cyan));">SW</div>
+          <h3 class="broadcaster__name">Sam Whitfield</h3>
+          <p class="broadcaster__role mono">Game Director<br>Nightfall Studios</p>
+          <p class="broadcaster__bio">Ships games that get finished, which is rarer than it sounds. Hosting the indie showcase.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== GALLERY / ARCHIVE ============================== -->
+  <section id="gallery" class="section" data-waypoint="Archive" data-waypoint-index="WP // 05">
+    <div class="container">
+      <div class="section-head reveal-group">
+        <p class="eyebrow mono reveal-item">Waypoint 05 — Archive</p>
+        <h2 class="reveal-item">Last year's signal, replayed.</h2>
+        <p class="reveal-item">Fragments from Techfest 2025 — full gallery drops closer to the date.</p>
+      </div>
+      <div class="archive-grid reveal-group">
+        <div class="archive-item archive-item--tall reveal-item" style="background:linear-gradient(155deg,#3a2470,#151030);"><span class="archive-item__tag mono">FRAME_014</span></div>
+        <div class="archive-item reveal-item" style="background:linear-gradient(155deg,#0f4a44,#0a1220);"><span class="archive-item__tag mono">FRAME_027</span></div>
+        <div class="archive-item reveal-item" style="background:linear-gradient(155deg,#5a1a4a,#150c22);"><span class="archive-item__tag mono">FRAME_033</span></div>
+        <div class="archive-item reveal-item" style="background:linear-gradient(155deg,#402a10,#150f0a);"><span class="archive-item__tag mono">FRAME_041</span></div>
+        <div class="archive-item reveal-item" style="background:linear-gradient(155deg,#12325a,#0a121f);"><span class="archive-item__tag mono">FRAME_052</span></div>
+        <div class="archive-item archive-item--tall reveal-item" style="background:linear-gradient(155deg,#2a1a55,#0e0a1c);"><span class="archive-item__tag mono">FRAME_066</span></div>
+        <div class="archive-item reveal-item" style="background:linear-gradient(155deg,#0f4a44,#0a1220);"><span class="archive-item__tag mono">FRAME_071</span></div>
+        <div class="archive-item reveal-item" style="background:linear-gradient(155deg,#5a1a4a,#150c22);"><span class="archive-item__tag mono">FRAME_089</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== REGISTER / TUNE IN ============================== -->
+  <section id="register" class="section tunein" data-waypoint="Tune In" data-waypoint-index="WP // 06">
+    <div class="container">
+      <div class="tunein__panel glass reveal-group">
+        <div class="aurora-blob" style="width:520px;height:520px;top:-220px;left:50%;transform:translateX(-50%);background:var(--violet);animation:drift-b 16s ease-in-out infinite;"></div>
+        <p class="eyebrow mono reveal-item">Waypoint 06 — Tune in</p>
+        <h2 class="reveal-item">Registrations open until the signal starts.</h2>
+        <p class="sub reveal-item">One pass gets you into every track — hackathon, robotics, summit, arena, sprint, workshops.</p>
+
+        <div class="countdown reveal-item">
+          <div class="countdown__unit"><strong data-cd="days">00</strong><span>Days</span></div>
+          <div class="countdown__unit"><strong data-cd="hours">00</strong><span>Hours</span></div>
+          <div class="countdown__unit"><strong data-cd="mins">00</strong><span>Mins</span></div>
+          <div class="countdown__unit"><strong data-cd="secs">00</strong><span>Secs</span></div>
+        </div>
+
+        <div class="hero__cta reveal-item">
+          <a href="#register" class="btn btn--primary" data-cursor="Register">Reserve a Pass</a>
+          <a href="#events" class="btn btn--ghost" data-cursor="View">Compare Tracks</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__top">
+      <div>
+        <div class="footer__brand">TECHFEST</div>
+        <p class="footer__tagline">A signal from the future of building, broadcast once a year out of Mumbai.</p>
+      </div>
+      <div class="footer__links">
+        <div class="footer__col">
+          <h4>Waypoints</h4>
+          <a href="#about">Origin</a>
+          <a href="#events">Frequencies</a>
+          <a href="#timeline">Trajectory</a>
+        </div>
+        <div class="footer__col">
+          <h4>More</h4>
+          <a href="#speakers">Broadcasters</a>
+          <a href="#gallery">Archive</a>
+          <a href="#register">Tune in</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 TECHFEST. A fictional festival built to show off some 3D.</span>
+      <div class="footer__socials">
+        <a href="#" aria-label="Twitter / X" data-cursor="Open"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7l-5.5-7.2L4.5 22H1.3l8.1-9.3L1 2h7.2l5 6.6L18.9 2Zm-1.2 18h1.7L7.4 3.9H5.6L17.7 20Z"/></svg></a>
+        <a href="#" aria-label="Instagram" data-cursor="Open"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg></a>
+        <a href="#" aria-label="GitHub" data-cursor="Open"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.4 9.4 0 0 1 5 0c1.91-1.3 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.35 4.68-4.58 4.93.36.31.68.92.68 1.85v2.75c0 .26.18.58.69.48A10 10 0 0 0 12 2Z"/></svg></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal__panel">
+    <button class="modal__close" aria-label="Close">✕</button>
+  </div>
+</div>
+
+
+<script>
+/* ===================================================================
+   TECHFEST — SIGNAL  |  script.js
+   =================================================================== */
+
+(function () {
+  "use strict";
+
+  gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+  /* -----------------------------------------------------------------
+     0. PRELOADER
+  ----------------------------------------------------------------- */
+  const preloader = document.querySelector(".preloader");
+  const preloaderPct = document.querySelector(".preloader__pct");
+  let fakeProgress = 0;
+  const progressTimer = setInterval(() => {
+    fakeProgress += Math.random() * 18;
+    if (fakeProgress >= 96) fakeProgress = 96;
+    preloaderPct.textContent = Math.floor(fakeProgress) + "%";
+  }, 120);
+
+  window.addEventListener("load", () => {
+    clearInterval(progressTimer);
+    preloaderPct.textContent = "100%";
+    gsap.to(preloader, {
+      opacity: 0,
+      duration: 0.9,
+      delay: 0.35,
+      ease: "power2.out",
+      onComplete: () => {
+        preloader.style.display = "none";
+        document.body.classList.remove("is-loading");
+        ScrollTrigger.refresh();
+      },
+    });
+  });
+
+  /* -----------------------------------------------------------------
+     1. CUSTOM CURSOR
+  ----------------------------------------------------------------- */
+  if (!isCoarsePointer) {
+    const dot = document.querySelector(".cursor-dot");
+    const ring = document.querySelector(".cursor-ring");
+    let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+    let rx = mx, ry = my;
+
+    window.addEventListener("mousemove", (e) => {
+      mx = e.clientX;
+      my = e.clientY;
+      dot.style.transform = `translate(${mx}px, ${my}px)`;
+    });
+
+    (function ringLoop() {
+      rx += (mx - rx) * 0.16;
+      ry += (my - ry) * 0.16;
+      ring.style.transform = `translate(${rx}px, ${ry}px)`;
+      requestAnimationFrame(ringLoop);
+    })();
+
+    document.querySelectorAll("[data-cursor]").forEach((el) => {
+      el.addEventListener("mouseenter", () => {
+        document.body.classList.add("cursor-active");
+        const label = el.getAttribute("data-cursor");
+        if (label) ring.setAttribute("data-label", label);
+      });
+      el.addEventListener("mouseleave", () => {
+        document.body.classList.remove("cursor-active");
+        ring.removeAttribute("data-label");
+      });
+    });
+  } else {
+    document.body.classList.add("no-cursor");
+  }
+
+  /* -----------------------------------------------------------------
+     2. NAV
+  ----------------------------------------------------------------- */
+  const nav = document.querySelector(".nav");
+  const navToggle = document.querySelector(".nav__toggle");
+  const navMenu = document.querySelector(".nav__menu");
+
+  ScrollTrigger.create({
+    start: 40,
+    onUpdate: (self) => {
+      nav.classList.toggle("nav--scrolled", self.scroll() > 40);
+    },
+  });
+
+  navToggle.addEventListener("click", () => {
+    const open = document.body.classList.toggle("nav-open");
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    link.addEventListener("click", (e) => {
+      const targetId = link.getAttribute("href");
+      if (targetId && targetId.length > 1) {
+        const target = document.querySelector(targetId);
+        if (target) {
+          e.preventDefault();
+          document.body.classList.remove("nav-open");
+          gsap.to(window, {
+            duration: 1.1,
+            scrollTo: { y: target, offsetY: 70 },
+            ease: "power3.inOut",
+          });
+        }
+      }
+    });
+  });
+
+  /* Section -> nav active state + waypoint HUD label */
+  const sections = document.querySelectorAll("[data-waypoint]");
+  const hudLabel = document.querySelector(".signal-hud__label");
+  const hudIndex = document.querySelector(".signal-hud__index");
+
+  sections.forEach((sec) => {
+    ScrollTrigger.create({
+      trigger: sec,
+      start: "top center",
+      end: "bottom center",
+      onEnter: () => setActiveWaypoint(sec),
+      onEnterBack: () => setActiveWaypoint(sec),
+    });
+  });
+
+  function setActiveWaypoint(sec) {
+    const wp = sec.getAttribute("data-waypoint");
+    const idx = sec.getAttribute("data-waypoint-index");
+    if (hudLabel) hudLabel.textContent = wp;
+    if (hudIndex) hudIndex.textContent = idx;
+    document.querySelectorAll(".nav__menu a").forEach((a) => {
+      a.classList.toggle("is-active", a.getAttribute("href") === "#" + sec.id);
+    });
+  }
+
+  /* -----------------------------------------------------------------
+     3. SIGNAL PROGRESS RING (HUD)
+  ----------------------------------------------------------------- */
+  const ringFg = document.querySelector(".signal-hud__ring-fg");
+  const ringLength = initRingLength();
+  function initRingLength() {
+    if (!ringFg) return 0;
+    const len = ringFg.getTotalLength();
+    ringFg.style.strokeDasharray = len;
+    ringFg.style.strokeDashoffset = len;
+    return len;
+  }
+
+  ScrollTrigger.create({
+    trigger: document.body,
+    start: "top top",
+    end: "bottom bottom",
+    onUpdate: (self) => {
+      if (!ringFg || !ringLength) return;
+      ringFg.style.strokeDashoffset = ringLength * (1 - self.progress);
+    },
+  });
+
+  /* -----------------------------------------------------------------
+     4. BACK TO TOP
+  ----------------------------------------------------------------- */
+  const backToTop = document.querySelector(".back-to-top");
+  ScrollTrigger.create({
+    start: 600,
+    onUpdate: (self) => {
+      backToTop.classList.toggle("is-visible", self.scroll() > 600);
+    },
+  });
+  backToTop.addEventListener("click", () => {
+    gsap.to(window, { duration: 1, scrollTo: { y: 0 }, ease: "power3.inOut" });
+  });
+
+  /* -----------------------------------------------------------------
+     5. REVEAL ANIMATIONS
+  ----------------------------------------------------------------- */
+  document.querySelectorAll(".reveal-group").forEach((group) => {
+    const items = group.querySelectorAll(".reveal-item");
+    gsap.set(items, { opacity: 0, y: 46 });
+    ScrollTrigger.create({
+      trigger: group,
+      start: "top 82%",
+      onEnter: () =>
+        gsap.to(items, {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: "power3.out",
+          stagger: 0.12,
+        }),
+      once: true,
+    });
+  });
+
+  /* -----------------------------------------------------------------
+     6. STAT COUNTERS
+  ----------------------------------------------------------------- */
+  document.querySelectorAll(".stat__value").forEach((el) => {
+    const target = parseFloat(el.getAttribute("data-count"));
+    const suffix = el.getAttribute("data-suffix") || "";
+    const decimals = el.getAttribute("data-decimals") ? parseInt(el.getAttribute("data-decimals")) : 0;
+    const proxy = { val: 0 };
+    ScrollTrigger.create({
+      trigger: el,
+      start: "top 88%",
+      once: true,
+      onEnter: () => {
+        gsap.to(proxy, {
+          val: target,
+          duration: 1.8,
+          ease: "power2.out",
+          onUpdate: () => {
+            el.textContent = proxy.val.toFixed(decimals) + suffix;
+          },
+        });
+      },
+    });
+  });
+
+  /* -----------------------------------------------------------------
+     7. EVENT CARD TILT + MODAL
+  ----------------------------------------------------------------- */
+  const cardData = {
+    hack: {
+      eyebrow: "FREQUENCY 01 — HACKATHON",
+      title: "Hack the Grid",
+      desc: "A 36-hour build sprint. Pick a real infrastructure problem — power, transit, water, or civic data — and ship a working prototype, not a pitch deck. Mentors from industry drop in every few hours.",
+      duration: "36 hours",
+      format: "Teams of 2–4",
+      prize: "₹3,00,000",
+    },
+    robotics: {
+      eyebrow: "FREQUENCY 02 — ROBOTICS ARENA",
+      title: "Circuit & Steel",
+      desc: "Autonomous and remote-piloted bots run a gauntlet of obstacles, precision tasks, and head-to-head combat rounds. Bring your own build or rent a chassis on-site.",
+      duration: "2 days",
+      format: "Elimination rounds",
+      prize: "₹2,00,000",
+    },
+    ai: {
+      eyebrow: "FREQUENCY 03 — AI & ML SUMMIT",
+      title: "Neural Frontier",
+      desc: "Talks and workshops from researchers and founders, capped off with a rapid model-building challenge on a dataset revealed the morning of.",
+      duration: "3 days",
+      format: "Talks + challenge",
+      prize: "₹1,50,000",
+    },
+    gaming: {
+      eyebrow: "FREQUENCY 04 — GAMING ARENA",
+      title: "Pixel Uprising",
+      desc: "LAN tournaments across three flagship titles, plus an indie showcase floor where student studios demo work-in-progress builds.",
+      duration: "2 days",
+      format: "Bracket tournament",
+      prize: "₹1,00,000",
+    },
+    design: {
+      eyebrow: "FREQUENCY 05 — DESIGN SPRINT",
+      title: "Blueprint Sprint",
+      desc: "Take a product from a one-line brief to a clickable prototype in a single sitting. Judged on clarity of thinking, not polish.",
+      duration: "12 hours",
+      format: "Solo or team",
+      prize: "₹75,000",
+    },
+    workshops: {
+      eyebrow: "FREQUENCY 06 — WORKSHOPS",
+      title: "Open Signal",
+      desc: "Drop-in sessions on the tools shaping the next decade of engineering — from embedded systems to distributed inference. No registration required, just show up.",
+      duration: "Ongoing, all 3 days",
+      format: "Drop-in",
+      prize: "Certificate",
+    },
+  };
+
+  document.querySelectorAll(".freq-card").forEach((card) => {
+    if (!isCoarsePointer && !reduceMotion) {
+      card.addEventListener("mousemove", (e) => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        gsap.to(card, {
+          rotateY: px * 14,
+          rotateX: -py * 14,
+          duration: 0.4,
+          ease: "power2.out",
+          transformPerspective: 700,
+        });
+      });
+      card.addEventListener("mouseleave", () => {
+        gsap.to(card, { rotateY: 0, rotateX: 0, duration: 0.6, ease: "power3.out" });
+      });
+    }
+    card.addEventListener("click", () => openModal(card.dataset.key));
+  });
+
+  const modal = document.querySelector(".modal");
+  const modalPanel = document.querySelector(".modal__panel");
+  const modalClose = document.querySelector(".modal__close");
+
+  function openModal(key) {
+    const data = cardData[key];
+    if (!data || !modal) return;
+    modalPanel.innerHTML = `
+      <span class="modal__eyebrow">${data.eyebrow}</span>
+      <h3 class="modal__title">${data.title}</h3>
+      <p class="modal__desc">${data.desc}</p>
+      <div class="modal__meta">
+        <div><span>Duration</span><strong>${data.duration}</strong></div>
+        <div><span>Format</span><strong>${data.format}</strong></div>
+        <div><span>Prize</span><strong>${data.prize}</strong></div>
+      </div>
+    `;
+    document.body.classList.add("modal-open");
+    modal.setAttribute("aria-hidden", "false");
+    modalClose.focus();
+  }
+  function closeModal() {
+    document.body.classList.remove("modal-open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+  modalClose.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+
+  /* -----------------------------------------------------------------
+     8. SPEAKER CARDS (touch fallback)
+  ----------------------------------------------------------------- */
+  if (isCoarsePointer) {
+    document.querySelectorAll(".broadcaster").forEach((card) => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".broadcaster").forEach((c) => {
+          if (c !== card) c.classList.remove("is-active");
+        });
+        card.classList.toggle("is-active");
+      });
+    });
+  }
+
+  /* -----------------------------------------------------------------
+     9. TIMELINE DRAW
+  ----------------------------------------------------------------- */
+  document.querySelectorAll(".trajectory__track").forEach((track) => {
+    ScrollTrigger.create({
+      trigger: track,
+      start: "top 75%",
+      end: "bottom 60%",
+      scrub: 0.6,
+      onUpdate: (self) => {
+        track.style.setProperty("--progress", self.progress);
+      },
+    });
+  });
+
+  /* -----------------------------------------------------------------
+     10. COUNTDOWN
+  ----------------------------------------------------------------- */
+  const FEST_DATE = new Date("2026-10-16T09:00:00+05:30").getTime();
+  const cdDays = document.querySelector('[data-cd="days"]');
+  const cdHours = document.querySelector('[data-cd="hours"]');
+  const cdMins = document.querySelector('[data-cd="mins"]');
+  const cdSecs = document.querySelector('[data-cd="secs"]');
+
+  function pad(n) {
+    return String(n).padStart(2, "0");
+  }
+  function tickCountdown() {
+    const now = Date.now();
+    let diff = Math.max(0, FEST_DATE - now);
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    if (cdDays) cdDays.textContent = pad(d);
+    if (cdHours) cdHours.textContent = pad(h);
+    if (cdMins) cdMins.textContent = pad(m);
+    if (cdSecs) cdSecs.textContent = pad(s);
+  }
+  tickCountdown();
+  setInterval(tickCountdown, 1000);
+
+  /* -----------------------------------------------------------------
+     11. THREE.JS AURORA SCENE
+  ----------------------------------------------------------------- */
+  const canvas = document.querySelector("#bg-canvas");
+  let renderer, scene, camera, particles, coreGroup, coreMesh, coreWire, glowSprite;
+  let clock = new THREE.Clock();
+  let mouseX = 0, mouseY = 0;
+  let targetHue = 0;
+  const AURORA_HUES = [0.72, 0.5, 0.86, 0.1]; // violet, cyan, magenta, amber (0-1 hue space)
+  let heroHit = document.querySelector(".hero__hit");
+
+  function initScene() {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 6.2);
+
+    const ambient = new THREE.AmbientLight(0x8866ff, 0.6);
+    scene.add(ambient);
+    const point1 = new THREE.PointLight(0x35e7c7, 3.2, 20);
+    point1.position.set(3, 2, 4);
+    scene.add(point1);
+    const point2 = new THREE.PointLight(0xff3fa4, 2.6, 20);
+    point2.position.set(-3, -2, 3);
+    scene.add(point2);
+
+    buildParticles();
+    buildCore();
+    buildGlow();
+
+    window.addEventListener("resize", onResize);
+    window.addEventListener("mousemove", onMouseMove);
+    if (heroHit) heroHit.addEventListener("click", onCoreClick);
+
+    renderer.setAnimationLoop(renderLoop);
+  }
+
+  function buildParticles() {
+    const count = window.innerWidth < 720 ? 1100 : 2400;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const color = new THREE.Color();
+
+    for (let i = 0; i < count; i++) {
+      const radius = 4 + Math.random() * 14;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 2 - 1);
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi) - 6;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+
+      const hue = AURORA_HUES[Math.floor(Math.random() * AURORA_HUES.length)];
+      color.setHSL(hue, 0.85, 0.6 + Math.random() * 0.15);
+      colors[i * 3] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.045,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+
+    particles = new THREE.Points(geo, mat);
+    scene.add(particles);
+  }
+
+  function buildCore() {
+    coreGroup = new THREE.Group();
+    coreGroup.position.set(0, 0, 0);
+
+    const baseGeo = new THREE.IcosahedronGeometry(1.35, 3);
+    const posAttr = baseGeo.attributes.position;
+    baseGeo.userData.original = Float32Array.from(posAttr.array);
+
+    const colorArr = new Float32Array(posAttr.count * 3);
+    const c1 = new THREE.Color(0x6c3fff);
+    const c2 = new THREE.Color(0x35e7c7);
+    const tmpColor = new THREE.Color();
+    for (let i = 0; i < posAttr.count; i++) {
+      const y = posAttr.getY(i);
+      const t = (y + 1.35) / 2.7;
+      tmpColor.copy(c1).lerp(c2, t);
+      colorArr[i * 3] = tmpColor.r;
+      colorArr[i * 3 + 1] = tmpColor.g;
+      colorArr[i * 3 + 2] = tmpColor.b;
+    }
+    baseGeo.setAttribute("color", new THREE.BufferAttribute(colorArr, 3));
+
+    const mat = new THREE.MeshPhysicalMaterial({
+      vertexColors: true,
+      roughness: 0.25,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.92,
+      clearcoat: 0.6,
+      side: THREE.DoubleSide,
+    });
+
+    coreMesh = new THREE.Mesh(baseGeo, mat);
+    coreGroup.add(coreMesh);
+
+    const wireGeo = new THREE.IcosahedronGeometry(1.55, 1);
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: 0xff3fa4,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+    });
+    coreWire = new THREE.Mesh(wireGeo, wireMat);
+    coreGroup.add(coreWire);
+
+    scene.add(coreGroup);
+  }
+
+  function buildGlow() {
+    const size = 256;
+    const c = document.createElement("canvas");
+    c.width = size;
+    c.height = size;
+    const ctx = c.getContext("2d");
+    const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grad.addColorStop(0, "rgba(160,120,255,0.55)");
+    grad.addColorStop(0.5, "rgba(120,80,220,0.18)");
+    grad.addColorStop(1, "rgba(10,10,20,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+    const tex = new THREE.CanvasTexture(c);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    glowSprite = new THREE.Sprite(mat);
+    glowSprite.scale.set(6.5, 6.5, 1);
+    glowSprite.position.set(0, 0, -0.4);
+    scene.add(glowSprite);
+  }
+
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function onMouseMove(e) {
+    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+  }
+
+  function onCoreClick() {
+    if (reduceMotion) return;
+    targetHue = Math.random();
+    const burstColor = new THREE.Color();
+    burstColor.setHSL(targetHue, 0.8, 0.6);
+    coreWire.material.color.copy(burstColor);
+
+    gsap.fromTo(
+      coreGroup.scale,
+      { x: 1, y: 1, z: 1 },
+      { x: 1.18, y: 1.18, z: 1.18, duration: 0.22, yoyo: true, repeat: 1, ease: "power2.out" }
+    );
+
+    const ringGeo = new THREE.RingGeometry(1.5, 1.58, 48);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: burstColor,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.copy(coreGroup.position);
+    scene.add(ring);
+    gsap.to(ring.scale, { x: 3.2, y: 3.2, z: 3.2, duration: 1.1, ease: "power2.out" });
+    gsap.to(ring.material, {
+      opacity: 0,
+      duration: 1.1,
+      ease: "power2.out",
+      onComplete: () => {
+        scene.remove(ring);
+        ringGeo.dispose();
+        ringMat.dispose();
+      },
+    });
+  }
+
+  /* Scroll-linked camera + hue */
+  let scrollProgress = 0;
+  ScrollTrigger.create({
+    trigger: document.body,
+    start: "top top",
+    end: "bottom bottom",
+    onUpdate: (self) => {
+      scrollProgress = self.progress;
+    },
+  });
+
+  function positionHeroHit() {
+    if (!heroHit || !coreGroup) return;
+    const vector = coreGroup.position.clone();
+    vector.project(camera);
+    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+    const size = Math.max(120, 260 - scrollProgress * 260);
+    heroHit.style.left = x - size / 2 + "px";
+    heroHit.style.top = y - size / 2 + "px";
+    heroHit.style.width = size + "px";
+    heroHit.style.height = size + "px";
+    heroHit.style.opacity = scrollProgress > 0.16 ? "0" : "1";
+    heroHit.style.pointerEvents = scrollProgress > 0.16 ? "none" : "auto";
+  }
+
+  function renderLoop() {
+    const t = clock.getElapsedTime();
+
+    if (particles && !reduceMotion) {
+      particles.rotation.y = t * 0.02 + scrollProgress * 1.4;
+      particles.rotation.x = scrollProgress * 0.3;
+    }
+
+    if (coreGroup) {
+      const targetRotY = mouseX * 0.5;
+      const targetRotX = mouseY * 0.3;
+      coreGroup.rotation.y += (targetRotY + t * 0.15 - coreGroup.rotation.y) * 0.04;
+      coreGroup.rotation.x += (targetRotX - coreGroup.rotation.x) * 0.04;
+      coreWire.rotation.y -= 0.0018;
+      coreWire.rotation.x += 0.0012;
+
+      if (!reduceMotion) {
+        const posAttr = coreMesh.geometry.attributes.position;
+        const original = coreMesh.geometry.userData.original;
+        for (let i = 0; i < posAttr.count; i++) {
+          const ox = original[i * 3];
+          const oy = original[i * 3 + 1];
+          const oz = original[i * 3 + 2];
+          const len = Math.sqrt(ox * ox + oy * oy + oz * oz) || 1;
+          const nx = ox / len, ny = oy / len, nz = oz / len;
+          const noise = Math.sin(t * 0.6 + i * 0.35) * 0.05 + Math.cos(t * 0.9 + i * 0.12) * 0.035;
+          posAttr.setXYZ(i, ox + nx * noise, oy + ny * noise, oz + nz * noise);
+        }
+        posAttr.needsUpdate = true;
+        if (Math.floor(t * 10) % 3 === 0) coreMesh.geometry.computeVertexNormals();
+      }
+    }
+
+    camera.position.z = 6.2 - scrollProgress * 4.3;
+    camera.position.x = mouseX * 0.15;
+    camera.position.y = -scrollProgress * 0.4 + mouseY * 0.08;
+
+    if (glowSprite) glowSprite.material.rotation = t * 0.05;
+
+    positionHeroHit();
+    renderer.render(scene, camera);
+  }
+
+  if (window.THREE) {
+    initScene();
+  }
+})();
+
+</script>
+</body>
+</html>
